@@ -13,6 +13,29 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type readOnlyEntry struct {
+	widget.Entry
+}
+
+func newReadOnlyEntry() *readOnlyEntry {
+	e := &readOnlyEntry{}
+	e.MultiLine = true
+	e.Wrapping = fyne.TextWrapWord
+	e.ExtendBaseWidget(e)
+	return e
+}
+
+func (e *readOnlyEntry) TypedRune(_ rune) {}
+
+func (e *readOnlyEntry) TypedKey(key *fyne.KeyEvent) {
+	switch key.Name {
+	case fyne.KeyBackspace, fyne.KeyDelete, fyne.KeyReturn, fyne.KeyEnter, fyne.KeyTab:
+		// 입력 차단
+	default:
+		e.Entry.TypedKey(key)
+	}
+}
+
 func main() {
 	a := app.New()
 	w := a.NewWindow("Base64 디코더 & URL 체크")
@@ -22,8 +45,18 @@ func main() {
 	input.SetPlaceHolder("Base64 문자열을 입력하세요...")
 	input.SetMinRowsVisible(3)
 
-	result := widget.NewLabel("")
-	result.Wrapping = fyne.TextWrapWord
+	result := newReadOnlyEntry()
+	result.SetMinRowsVisible(4)
+
+	encodeBtn := widget.NewButton("Base64 인코딩", func() {
+		text := input.Text
+		if text == "" {
+			result.SetText("입력값이 없습니다.")
+			return
+		}
+		encoded := base64.StdEncoding.EncodeToString([]byte(text))
+		result.SetText(fmt.Sprintf("✅ 인코딩 결과:\n%s", encoded))
+	})
 
 	btn := widget.NewButton("디코딩 & URL 확인", func() {
 		text := input.Text
@@ -76,7 +109,7 @@ func main() {
 	w.SetContent(container.NewVBox(
 		widget.NewLabel("Base64 디코더 & URL 체크 도구"),
 		input,
-		btn,
+		container.NewGridWithColumns(2, encodeBtn, btn),
 		widget.NewSeparator(),
 		result,
 	))

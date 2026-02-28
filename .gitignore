@@ -3,3 +3,4 @@ b64checker
 *.dll
 *.so
 *.dylib
+.vscode/settings.json
